@@ -23,7 +23,7 @@ class ForwardingView: UIView {
         self.opaque = false
     }
     
-    required init(coder: NSCoder) {
+    required init?(coder: NSCoder) {
         fatalError("NSCoding not supported")
     }
     
@@ -46,12 +46,10 @@ class ForwardingView: UIView {
         if let control = view as? UIControl {
             let targets = control.allTargets()
             for target in targets {
-                if var actions = control.actionsForTarget(target, forControlEvent: controlEvent) {
-                    for action in actions {
-                        if let selectorString = action as? String {
+                if let actions = control.actionsForTarget(target, forControlEvent: controlEvent) {
+                    for selectorString in actions {
                             let selector = Selector(selectorString)
                             control.sendAction(selector, to: target, forEvent: nil)
-                        }
                     }
                 }
             }
@@ -66,8 +64,7 @@ class ForwardingView: UIView {
         
         var closest: (UIView, CGFloat)? = nil
         
-        for anyView in self.subviews {
-            if let view = anyView as? UIView {
+        for view in self.subviews {
                 if view.hidden {
                     continue
                 }
@@ -84,7 +81,6 @@ class ForwardingView: UIView {
                 else {
                     closest = (view, distance)
                 }
-            }
         }
         
         if closest != nil {
@@ -151,13 +147,12 @@ class ForwardingView: UIView {
         return foundView
     }
     
-    override func touchesBegan(touches: Set<NSObject>, withEvent event: UIEvent) {
-        for obj in touches {
-            if let touch = obj as? UITouch {
+    override func touchesBegan(touches: Set<UITouch>, withEvent event: UIEvent?) {
+        for touch in touches {
                 let position = touch.locationInView(self)
-                var view = findNearestView(position)
+                let view = findNearestView(position)
                 
-                var viewChangedOwnership = self.ownView(touch, viewToOwn: view)
+                let viewChangedOwnership = self.ownView(touch, viewToOwn: view)
                 
                 if !viewChangedOwnership {
                     self.handleControl(view, controlEvent: .TouchDown)
@@ -167,22 +162,20 @@ class ForwardingView: UIView {
                         self.handleControl(view, controlEvent: .TouchDownRepeat)
                     }
                 }
-            }
         }
     }
     
-    override func touchesMoved(touches: Set<NSObject>, withEvent event: UIEvent) {
-        for obj in touches {
-            if let touch = obj as? UITouch {
+    override func touchesMoved(touches: Set<UITouch>, withEvent event: UIEvent?) {
+        for touch in touches {
                 let position = touch.locationInView(self)
                 
-                var oldView = self.touchToView[touch]
-                var newView = findNearestView(position)
+                let oldView = self.touchToView[touch]
+                let newView = findNearestView(position)
                 
                 if oldView != newView {
                     self.handleControl(oldView, controlEvent: .TouchDragExit)
                     
-                    var viewChangedOwnership = self.ownView(touch, viewToOwn: newView)
+                    let viewChangedOwnership = self.ownView(touch, viewToOwn: newView)
                     
                     if !viewChangedOwnership {
                         self.handleControl(newView, controlEvent: .TouchDragEnter)
@@ -195,13 +188,11 @@ class ForwardingView: UIView {
                     self.handleControl(oldView, controlEvent: .TouchDragInside)
                 }
             }
-        }
     }
     
-    override func touchesEnded(touches: Set<NSObject>, withEvent event: UIEvent) {
-        for obj in touches {
-            if let touch = obj as? UITouch {
-                var view = self.touchToView[touch]
+    override func touchesEnded(touches: Set<UITouch>, withEvent event: UIEvent?) {
+        for touch in touches {
+                let view = self.touchToView[touch]
                 
                 let touchPosition = touch.locationInView(self)
                 
@@ -214,18 +205,16 @@ class ForwardingView: UIView {
                 
                 self.touchToView[touch] = nil
             }
-        }
     }
 
-    override func touchesCancelled(touches: Set<NSObject>, withEvent event: UIEvent!) {
-        for obj in touches {
-            if let touch = obj as? UITouch {
-                var view = self.touchToView[touch]
-                
-                self.handleControl(view, controlEvent: .TouchCancel)
-                
-                self.touchToView[touch] = nil
-            }
+    
+    override func touchesCancelled(touches: Set<UITouch>?, withEvent event: UIEvent?) {
+        if let _touches = touches {
+            for touch in _touches {
+                    let view = self.touchToView[touch]
+                    self.handleControl(view, controlEvent: .TouchCancel)
+                    self.touchToView[touch] = nil
+                }
         }
     }
 }
